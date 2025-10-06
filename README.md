@@ -10,7 +10,8 @@ source .venv/bin/activate
 ```
 ## (Windows PowerShell)
 ```
-.\.venv\Scripts\Activate.bat
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
 ```
 
 ## upgrade pip and install requirements
