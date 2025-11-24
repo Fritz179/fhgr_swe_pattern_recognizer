@@ -1,11 +1,12 @@
-import cv2 as cv
 import argparse
-from pathlib import Path
 from collections.abc import Sequence
 from datetime import datetime
+from pathlib import Path
+
+import cv2 as cv
 import numpy as np
 
-from configs import AppConfig
+from configs import AppConfig, load_config
 from process import detect_shapes
 
 def parse_args(argv: Sequence[str] | None = None):
@@ -64,15 +65,17 @@ def parse_args(argv: Sequence[str] | None = None):
 def main() -> None:
     """Entry point of the application."""
     args = parse_args()
-    config = AppConfig(args.config_path, args.log_dir)
-    config.source_type = args.mode
+    config = load_config(args.config_path, args.log_dir)
 
     print(f"Running in {args.mode} mode.")
 
-    if args.mode == "CAMERA":
-        run_camera_mode(config)
-    else:
-        run_image_mode(config, args.image_dir)
+    try:
+        if args.mode == "CAMERA":
+            run_camera_mode(config)
+        else:
+            run_image_mode(config, args.image_dir)
+    finally:
+        config.logger.close()
 
 
 def run_camera_mode(config: AppConfig) -> None:
@@ -100,6 +103,9 @@ def run_camera_mode(config: AppConfig) -> None:
 
             for det in detections:
                 frame = det.draw_detections(frame)
+
+            if detections:
+                config.logger.write(detections)
 
             cv.imshow(window_name, frame)
             if cv.waitKey(1) & 0xFF == ord("q"):
@@ -136,6 +142,9 @@ def run_image_mode(config: AppConfig, image_dir: Path) -> None:
 
         for det in detections:
             frame = det.draw_detections(frame)
+
+        if detections:
+            config.logger.write(detections)
 
         annotated_path = path.with_name(f"{path.stem}_annotated{path.suffix}")
         cv.imwrite(str(annotated_path), frame)
