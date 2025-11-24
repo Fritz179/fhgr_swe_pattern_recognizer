@@ -65,7 +65,7 @@ def parse_args(argv: Sequence[str] | None = None):
 def main() -> None:
     """Entry point of the application."""
     args = parse_args()
-    config = load_config(args.config_path, args.log_dir, args.mode, args.image_dir)
+    config = load_config(args.config_path, args.log_dir)
 
     print(f"Running in {args.mode} mode.")
 
@@ -73,7 +73,7 @@ def main() -> None:
         if args.mode == "CAMERA":
             run_camera_mode(config)
         else:
-            run_image_mode(config)
+            run_image_mode(config, args.image_dir)
     finally:
         config.logger.close()
 
@@ -115,7 +115,7 @@ def run_camera_mode(config: AppConfig) -> None:
         cap.release()
         cv.destroyAllWindows()
 
-def run_image_mode(config: AppConfig) -> None:
+def run_image_mode(config: AppConfig, image_dir: Path) -> None:
     """
     Run the application in IMAGE mode:
     - iterate over all images in image_dir
@@ -123,9 +123,6 @@ def run_image_mode(config: AppConfig) -> None:
     - optionally save annotated images
     - log detections to CSV
     """
-    image_dir = config.image_dir
-    if image_dir is None:
-        raise ValueError("IMAGE mode requires an image directory.")
     if not image_dir.is_dir():
         raise NotADirectoryError(f"{image_dir} is not a directory.")
 

@@ -25,34 +25,18 @@ class CSVLogger:
         self.writer = csv.writer(self.file)
 
         if self.path.stat().st_size == 0:
-            self.writer.writerow(["timestamp", "pattern", "color", "x", "y", "w", "h"])
+            self.writer.writerow(["detection"])
             self.file.flush()
 
-    def write(self, detections: DetectionResult | Iterable[DetectionResult]) -> None:
+    def write(self, detection: str) -> None:
         """
         Append one or many DetectionResult objects to the CSV.
         """
-        if detections is None:
+        if detection is None:
             return
 
-        if isinstance(detections, Iterable) and not isinstance(detections, (str, bytes)):
-            iterable = detections
-        else:
-            iterable = [detections]
 
-        for detection in iterable:
-            x, y, w, h = detection.bbox
-            self.writer.writerow(
-                [
-                    detection.timestamp.isoformat(),
-                    detection.pattern.upper(),
-                    detection.color.upper(),
-                    x,
-                    y,
-                    w,
-                    h,
-                ]
-            )
+        self.writer.writerow([str(detection)])
 
         self.file.flush()
 

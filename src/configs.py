@@ -28,12 +28,9 @@ DEFAULT_COLOR_THRESHOLDS: dict[str, dict[str, list[int]]] = {
 
 @dataclass
 class AppConfig:
-    source_type: str  # "CAMERA" or "IMAGE"
-    image_dir: Path | None
-    log_dir: Path
+    logger: CSVLogger
     shape_thresholds: dict
     color_thresholds: dict
-    logger: "CSVLogger"
 
 
 def _load_config_file(config_path: Path) -> dict:
@@ -55,8 +52,6 @@ def _load_config_file(config_path: Path) -> dict:
 def load_config(
     config_path: Path | None,
     log_dir: Path | None,
-    mode: str,
-    image_dir: Path | None,
 ) -> AppConfig:
     """
     Build an AppConfig by merging defaults with an optional config file and CLI overrides.
@@ -66,14 +61,6 @@ def load_config(
         if config_path is not None
         else {}
     )
-
-    mode_upper = mode.upper()
-    if mode_upper not in {"CAMERA", "IMAGE"}:
-        raise ValueError("Mode must be 'CAMERA' or 'IMAGE'.")
-
-    resolved_image_dir = Path(image_dir) if image_dir else None
-    if mode_upper == "IMAGE" and resolved_image_dir is None:
-        raise ValueError("IMAGE mode requires an image directory.")
 
     merged_shape = {
         **copy.deepcopy(DEFAULT_SHAPE_THRESHOLDS),
@@ -91,9 +78,6 @@ def load_config(
     logger = CSVLogger(resolved_log_dir)
 
     return AppConfig(
-        source_type=mode_upper,
-        image_dir=resolved_image_dir,
-        log_dir=resolved_log_dir,
         shape_thresholds=merged_shape,
         color_thresholds=merged_color,
         logger=logger,
