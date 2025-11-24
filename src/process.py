@@ -2,7 +2,7 @@ import cv2 as cv
 import numpy as np
 from dataclasses import dataclass
 from datetime import datetime
-from src.configs import AppConfig
+from configs import AppConfig
 
 # Fallback thresholds in case the AppConfig is not fully populated yet.
 DEFAULT_SHAPE_THRESHOLDS = {

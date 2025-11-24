@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from src.logging import CSVLogger
+from logging import CSVLogger
 from pathlib import Path
 
 @dataclass
@@ -11,7 +11,7 @@ class AppConfig:
     color_thresholds: dict
 
 
-    def __init__(self, path: Path | None):
+    def __init__(self, config_path: Path | None, logging_path: Path | None):
         """
         Load application configuration from the given file path.
 
