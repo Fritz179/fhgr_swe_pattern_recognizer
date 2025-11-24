@@ -1,5 +1,4 @@
 from pathlib import Path
-from src.process import DetectionResult
 
 class CSVLogger:
     def __init__(self, log_dir: Path | None) -> None:
@@ -10,7 +9,7 @@ class CSVLogger:
         Prepares the CSV file for logging detection results.
         """
 
-    def write(self, detections: list[DetectionResult]) -> None:
+    def write(self, detections: str) -> None:
         """
         Append multiple DetectionResult objects to the CSV.
         """
