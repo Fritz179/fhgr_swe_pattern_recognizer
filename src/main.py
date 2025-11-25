@@ -39,6 +39,16 @@ def parse_args(argv: Sequence[str] | None = None):
     )
 
     parser.add_argument(
+        "-o",
+        "--output-dir",
+        dest="output_dir",
+        type=Path,
+        default=None,
+        help="Directory where annotated images will be written in IMAGE mode. "
+        "Defaults to <image-dir>_annotated.",
+    )
+
+    parser.add_argument(
         "-c",
         "--config",
         dest="config_path",
@@ -56,6 +66,15 @@ def parse_args(argv: Sequence[str] | None = None):
         help="Directory where CSV logs will be written.",
     )
 
+    parser.add_argument(
+        "-f",
+        "--log-format",
+        dest="log_format",
+        choices=["csv", "pretty"],
+        default=None,
+        help="Logging format: 'csv' or 'pretty' (table-style text).",
+    )
+
     args = parser.parse_args(argv)
     if args.mode == "IMAGE" and args.image_dir is None:
         parser.error("IMAGE mode requires --image-dir")
@@ -65,7 +84,7 @@ def parse_args(argv: Sequence[str] | None = None):
 def main() -> None:
     """Entry point of the application."""
     args = parse_args()
-    config = load_config(args.config_path, args.log_dir)
+    config = load_config(args.config_path, args.log_dir, args.log_format)
 
     print(f"Running in {args.mode} mode.")
 
@@ -73,7 +92,7 @@ def main() -> None:
         if args.mode == "CAMERA":
             run_camera_mode(config)
         else:
-            run_image_mode(config, args.image_dir)
+            run_image_mode(config, args.image_dir, args.output_dir)
     finally:
         config.logger.close()
 
@@ -115,7 +134,7 @@ def run_camera_mode(config: AppConfig) -> None:
         cap.release()
         cv.destroyAllWindows()
 
-def run_image_mode(config: AppConfig, image_dir: Path) -> None:
+def run_image_mode(config: AppConfig, image_dir: Path, output_dir: Path | None) -> None:
     """
     Run the application in IMAGE mode:
     - iterate over all images in image_dir
@@ -125,6 +144,9 @@ def run_image_mode(config: AppConfig, image_dir: Path) -> None:
     """
     if not image_dir.is_dir():
         raise NotADirectoryError(f"{image_dir} is not a directory.")
+
+    dest_dir = output_dir or image_dir.with_name(f"{image_dir.name}_annotated")
+    dest_dir.mkdir(parents=True, exist_ok=True)
 
     image_paths = sorted(
         p
@@ -146,7 +168,7 @@ def run_image_mode(config: AppConfig, image_dir: Path) -> None:
         if detections:
             config.logger.write(detections)
 
-        annotated_path = path.with_name(f"{path.stem}_annotated{path.suffix}")
+        annotated_path = dest_dir / path.name
         cv.imwrite(str(annotated_path), frame)
 
 

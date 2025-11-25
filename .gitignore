@@ -1,3 +1,7 @@
+# Python
 .venv
 __pycache__
+
+# Program side effects
 logs
+assets_annotated

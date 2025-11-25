@@ -9,6 +9,7 @@ DEFAULT_SHAPE_THRESHOLDS = {
     "min_area": 300,                  # skip tiny contours/noise
     "square_aspect_tolerance": 0.15,  # how far from 1.0 the aspect ratio may deviate
     "circularity": 0.8,               # 1.0 is a perfect circle
+    "approx_epsilon": 0.04,           # approximation factor for polygonal curves
 }
 
 # HSV ranges for basic colors; values can be overridden via config.color_thresholds.
@@ -43,21 +44,51 @@ class DetectionResult:
             "BLUE": (255, 0, 0),
             "YELLOW": (0, 255, 255),
             "VIOLET": (211, 0, 148),
+            "UNKNOWN": (255, 255, 255),
         }
         box_color = color_map.get(self.color.upper(), (255, 255, 255))
 
         cv.rectangle(frame, (x, y), (x + w, y + h), box_color, 2)
-        label = f"{self.pattern} / {self.color}"
-        text_origin = (x, max(15, y - 10))
+
+        font = cv.FONT_HERSHEY_DUPLEX
+        scale = 1
+        thickness = 1
+        pattern_text = self.pattern.capitalize()
+        color_text = self.color.upper()
+        space_size, _ = cv.getTextSize(" ", font, scale, thickness)
+        pattern_size, _ = cv.getTextSize(pattern_text, font, scale, thickness)
+        color_size, baseline = cv.getTextSize(color_text, font, scale, thickness)
+
+        total_w = pattern_size[0] + space_size[0] + color_size[0]
+        total_h = max(pattern_size[1], color_size[1]) + baseline
+        padding = 5
+        text_x = x
+        text_y = max(total_h + padding, y - 10)
+
+        bg_tl = (text_x - padding, text_y - total_h)
+        bg_br = (text_x + total_w + padding, text_y + padding)
+        cv.rectangle(frame, bg_tl, bg_br, (0, 0, 0), thickness=-1)
+
         cv.putText(
             frame,
-            label,
-            text_origin,
-            cv.FONT_HERSHEY_SIMPLEX,
-            0.5,
+            pattern_text,
+            (text_x, text_y),
+            font,
+            scale,
+            (255, 255, 255),
+            thickness,
+            lineType=cv.LINE_4,
+        )
+        color_x = text_x + pattern_size[0] + space_size[0]
+        cv.putText(
+            frame,
+            color_text,
+            (color_x, text_y),
+            font,
+            scale,
             box_color,
-            2,
-            lineType=cv.LINE_AA,
+            thickness,
+            lineType=cv.LINE_4,
         )
         return frame
 
@@ -68,19 +99,43 @@ def _resolve_shape_thresholds(config: AppConfig | None) -> dict:
 
 
 def _resolve_color_ranges(config: AppConfig | None) -> dict[str, list[tuple[np.ndarray, np.ndarray]]]:
+    """
+    Normalize color thresholds from the config into HSV numpy arrays.
+
+    The config can provide either:
+      - a list of (lower, upper) HSV pairs
+      - a single dict with ``lower``/``upper`` keys
+      - a list of such dicts
+    """
     ranges = DEFAULT_COLOR_RANGES.copy()
     cfg = getattr(config, "color_thresholds", None) or {}
+
     for name, bounds in cfg.items():
         normalized: list[tuple[np.ndarray, np.ndarray]] = []
-        for lower, upper in bounds:
-            normalized.append((np.array(lower, dtype=np.uint8), np.array(upper, dtype=np.uint8)))
+
+        # Allow a single dict {lower: [...], upper: [...]} as shorthand.
+        if isinstance(bounds, dict) and "lower" in bounds and "upper" in bounds:
+            bounds = [(bounds["lower"], bounds["upper"])]
+
+        for entry in bounds:
+            if isinstance(entry, dict) and "lower" in entry and "upper" in entry:
+                lower, upper = entry["lower"], entry["upper"]
+            else:
+                lower, upper = entry
+
+            normalized.append(
+                (np.array(lower, dtype=np.uint8), np.array(upper, dtype=np.uint8))
+            )
+
         ranges[name.upper()] = normalized
+
     return ranges
 
 
 def _classify_shape(contour: np.ndarray, thresholds: dict) -> str | None:
     peri = cv.arcLength(contour, True)
-    approx = cv.approxPolyDP(contour, 0.04 * peri, True)
+    epsilon_factor = thresholds.get("approx_epsilon", 0.04)
+    approx = cv.approxPolyDP(contour, epsilon_factor * peri, True)
     area = cv.contourArea(contour)
 
     if area < thresholds["min_area"] or peri == 0:
