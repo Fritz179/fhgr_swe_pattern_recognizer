@@ -35,6 +35,11 @@ python src/main.py IMAGE -i assets
 - Optional config file / log location / format: `python src/main.py CAMERA --config config.yaml --log-dir logs --log-format csv`
 - `--log-format` can be `pretty` (sample_log-style table) or `csv`.
 - Press `q` to quit the camera window.
+- CAMERA mode opens a PyQt GUI with:
+  - live feed, pause/resume
+  - FPS slider (1-30, max = unlimited)
+  - Save image button (saves to `camera_annotated/` and logs detections for that frame)
+  - Speak detections button (gTTS + QtMultimedia playback)
 
 ### config file example (YAML)
 ```yaml

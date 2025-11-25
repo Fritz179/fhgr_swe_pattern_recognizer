@@ -63,7 +63,7 @@ def parse_args(argv: Sequence[str] | None = None):
         dest="log_dir",
         type=Path,
         default=None,
-        help="Directory where CSV logs will be written.",
+        help="Directory where logs will be written.",
     )
 
     parser.add_argument(
@@ -102,37 +102,16 @@ def run_camera_mode(config: AppConfig) -> None:
     Run the application in CAMERA mode:
     - open webcam
     - process each frame
-    - visualize detections
-    - log detections to CSV
+    - visualize detections in a GUI
+    - optional logging and saving through GUI controls
     """
-    cap = cv.VideoCapture(0)
-    if not cap.isOpened():
-        raise RuntimeError("Could not open the default camera.")
+    from PyQt5 import QtWidgets  # imported here to avoid hard dependency in IMAGE mode
+    from gui import CameraWindow
 
-    window_name = "Pattern Recognizer"
-
-    try:
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            timestamp = datetime.now()
-            detections = detect_shapes(frame, config, timestamp) or []
-
-            for det in detections:
-                frame = det.draw_detections(frame)
-
-            if detections:
-                config.logger.write(detections)
-
-            cv.imshow(window_name, frame)
-            if cv.waitKey(1) & 0xFF == ord("q"):
-                break
-
-    finally:
-        cap.release()
-        cv.destroyAllWindows()
+    app = QtWidgets.QApplication([])
+    window = CameraWindow(config)
+    window.show()
+    app.exec_()
 
 def run_image_mode(config: AppConfig, image_dir: Path, output_dir: Path | None) -> None:
     """

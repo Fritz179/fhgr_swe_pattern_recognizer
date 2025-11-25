@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
-    from logging import BaseLogger
+    from logs import BaseLogger
 
 
 DEFAULT_SHAPE_THRESHOLDS: dict[str, Any] = {
@@ -77,8 +77,7 @@ def load_config(
     resolved_log_dir.mkdir(parents=True, exist_ok=True)
     resolved_log_format = (log_format or cfg_data.get("log_format") or "pretty").lower()
 
-    # Local import to avoid confusion with stdlib logging module name.
-    from logging import create_logger
+    from logs import create_logger
 
     logger = create_logger(resolved_log_dir, resolved_log_format)
 
