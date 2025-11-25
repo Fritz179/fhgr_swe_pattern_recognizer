@@ -1,0 +1,16 @@
+log_dir: logs
+log_format: pretty # or csv
+shape_thresholds:
+  min_area: 350
+  square_aspect_tolerance: 0.1
+  circularity: 0.82
+  approx_epsilon: 0.04
+color_thresholds:
+  RED:
+    - lower: [0, 70, 50]
+      upper: [10, 255, 255]
+    - lower: [170, 70, 50]
+      upper: [180, 255, 255]
+  GREEN:
+    - lower: [35, 40, 40]
+      upper: [85, 255, 255]
