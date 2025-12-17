@@ -1,0 +1,5 @@
+opencv-python>=4.10
+pyyaml>=6.0
+numpy>=1.26
+PyQt5>=5.15
+gTTS>=2.5
