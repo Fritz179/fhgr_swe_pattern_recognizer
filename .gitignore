@@ -1,6 +1,9 @@
 # Python
 .venv
 __pycache__
+*.pyc
+*.pyo
+*.log
 
 # Program side effects
 logs
